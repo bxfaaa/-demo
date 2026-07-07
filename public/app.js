@@ -21,6 +21,10 @@ const typeColors = {
   warning: '#F59E0B'
 };
 
+const maxUploadDimension = 1600;
+const maxDirectUploadSize = 2.5 * 1024 * 1024;
+const compressedImageQuality = 0.86;
+
 const state = {
   file: null,
   style: ''
@@ -155,16 +159,18 @@ async function submitReview() {
   }
 
   setMode('loading');
-  const formData = new FormData();
-  formData.append('image', state.file);
-  formData.append('style', state.style);
 
   try {
+    const uploadFile = await prepareImageForUpload(state.file);
+    const formData = new FormData();
+    formData.append('image', uploadFile);
+    formData.append('style', state.style);
+
     const response = await fetch('/api/calligraphy-review', {
       method: 'POST',
       body: formData
     });
-    const payload = await response.json();
+    const payload = await parseJsonResponse(response);
     if (!payload.success) {
       throw new Error(payload.message || '点评失败');
     }
@@ -174,6 +180,81 @@ async function submitReview() {
     setMode('upload');
     showError(error.message || 'AI 点评失败，请稍后重试');
   }
+}
+
+async function parseJsonResponse(response) {
+  const text = await response.text();
+  let payload = null;
+
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    if (response.status === 504) {
+      throw new Error('AI 点评超时了，请换一张更清晰、文件更小的图片再试');
+    }
+
+    const message = text.startsWith('An error')
+      ? '线上服务暂时异常，请稍后重试'
+      : '服务返回异常，请稍后重试';
+    throw new Error(message);
+  }
+
+  if (!response.ok) {
+    throw new Error(payload.message || `请求失败（${response.status}）`);
+  }
+
+  return payload;
+}
+
+async function prepareImageForUpload(file) {
+  const image = await loadImage(file);
+  const shouldResize = Math.max(image.naturalWidth, image.naturalHeight) > maxUploadDimension;
+  const shouldCompress = file.size > maxDirectUploadSize || file.type === 'image/png' || file.type === 'image/webp';
+
+  if (!shouldResize && !shouldCompress) {
+    return file;
+  }
+
+  const scale = shouldResize
+    ? maxUploadDimension / Math.max(image.naturalWidth, image.naturalHeight)
+    : 1;
+  const width = Math.round(image.naturalWidth * scale);
+  const height = Math.round(image.naturalHeight * scale);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d');
+  context.drawImage(image, 0, 0, width, height);
+
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob((result) => {
+      if (result) resolve(result);
+      else reject(new Error('图片压缩失败，请重新选择图片'));
+    }, 'image/jpeg', compressedImageQuality);
+  });
+
+  const safeName = file.name.replace(/\.[^.]+$/, '') || 'calligraphy';
+  return new File([blob], `${safeName}.jpg`, { type: 'image/jpeg' });
+}
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const url = URL.createObjectURL(file);
+
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('图片读取失败，请重新选择图片'));
+    };
+
+    image.src = url;
+  });
 }
 
 function renderResult(data) {
