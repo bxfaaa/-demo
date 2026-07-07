@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/calligraphy-review.js": {
-      "maxDuration": 60
-    }
-  }
-}
