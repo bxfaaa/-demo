@@ -1,8 +1,6 @@
 node_modules/
 .env
+.env.local
 public/uploads/
 calligraphy-review-demo.zip
-npm-debug.log*
-.DS_Store
-.vercel
-.env*
+.git/
