@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>书法作业 AI 点评</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="intro">
+        <div>
+          <p class="eyebrow">Calligraphy Review Demo</p>
+          <h1>书法作业 AI 点评</h1>
+          <p>上传作业图片，AI 帮你圈出问题并给出练习建议</p>
+        </div>
+        <div id="modelBadge" class="model-badge">检测模型状态...</div>
+      </section>
+
+      <section id="uploadPanel" class="workspace">
+        <div class="upload-pane">
+          <label id="dropZone" class="drop-zone" for="imageInput">
+            <input id="imageInput" type="file" accept="image/jpeg,image/png,image/webp" />
+            <span class="upload-icon">+</span>
+            <strong>选择或拖入作业图片</strong>
+            <small>支持 JPG / PNG / WEBP，建议不超过 10MB</small>
+          </label>
+          <div id="previewWrap" class="preview-wrap hidden">
+            <img id="previewImage" alt="上传预览" />
+            <button id="changeImageBtn" type="button" class="ghost-button">重新选择图片</button>
+          </div>
+        </div>
+
+        <div class="control-pane">
+          <h2>选择书法类型</h2>
+          <div id="styleOptions" class="style-grid"></div>
+          <p id="formError" class="form-error" aria-live="polite"></p>
+          <button id="submitBtn" type="button" class="primary-button" disabled>开始 AI 点评</button>
+        </div>
+      </section>
+
+      <section id="loadingPanel" class="loading-panel hidden">
+        <div class="loader"></div>
+        <h2>AI 老师正在认真查看你的作业，请稍等...</h2>
+        <p>正在识别文字、分析结构，并生成标注图片</p>
+      </section>
+
+      <section id="resultPanel" class="result-layout hidden">
+        <div class="result-image-panel">
+          <img id="annotatedImage" alt="AI 标注后的书法作业" />
+          <div class="action-row">
+            <button id="resetBtn" type="button" class="ghost-button">重新上传</button>
+            <a id="downloadBtn" class="primary-link" download>下载标注图片</a>
+          </div>
+        </div>
+
+        <div class="review-panel">
+          <div class="score-block">
+            <span id="scoreValue">--</span>
+            <div>
+              <p id="sourceText" class="source-text"></p>
+              <h2 id="levelText">点评结果</h2>
+              <p id="summaryText"></p>
+            </div>
+          </div>
+
+          <div class="feedback-box">
+            <p id="friendlyFeedback"></p>
+          </div>
+
+          <div class="two-column">
+            <div>
+              <h3>优点</h3>
+              <ul id="strengthList"></ul>
+            </div>
+            <div>
+              <h3>下一步重点</h3>
+              <ul id="focusList"></ul>
+            </div>
+          </div>
+
+          <h3>标注点明细</h3>
+          <div id="annotationList" class="annotation-list"></div>
+
+          <div class="practice-card">
+            <h3>练习建议</h3>
+            <p><strong>今日重点：</strong><span id="todayFocus"></span></p>
+            <p><strong>练习方法：</strong><span id="practiceMethod"></span></p>
+            <p><strong>建议时长：</strong><span id="practiceTime"></span></p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
